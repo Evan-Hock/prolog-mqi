@@ -380,10 +380,10 @@ data FreeVariableBinding
 prologThreadDecodeResult :: PrologThread -> IO QueryResult
 prologThreadDecodeResult t = do
     result <- prologThreadRecv t
-    case J.eitherDecodeStrictText result of
-        Left e -> E.throwIO . PrologRecvDecodingException $ C.pack e
-        Right (Functor "false" _) -> return Failure
-        Right r@(Functor "exception" (PrologValue exceptionType : _)) ->
+    case J.decodeStrictText result of
+        Nothing -> E.throwIO . PrologRecvDecodingException $ TE.encodeUtf8 result
+        Just (Functor "false" _) -> return Failure
+        Just r@(Functor "exception" (PrologValue exceptionType : _)) ->
             case exceptionType of
                 "connection_failed" -> E.throwIO $ PrologConnectionFailedException r
                 "time_limit_exceeded" -> E.throwIO $ PrologQueryTimeoutException r
@@ -392,8 +392,8 @@ prologThreadDecodeResult t = do
                 "result_not_available" -> E.throwIO $ PrologResultNotAvailableException r
                 _ -> E.throwIO $ SomePrologException r
             
-        Right (Functor "true" (List answers : _)) -> determineResults answers
-        Right r -> E.throwIO $ SomePrologException r
+        Just (Functor "true" (List answers : _)) -> determineResults answers
+        Just r -> E.throwIO $ SomePrologException r
 
 
 determineResults :: [PrologValue] -> IO QueryResult
