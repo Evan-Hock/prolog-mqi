@@ -201,7 +201,7 @@ instance ToJSON PrologValue where
 
 startProlog :: IO MQI
 startProlog = do
-    (_, Just out, Just err, processHandle) <- createProcess_ "PrologMQI.start" (proc "swipl" ["mqi","--write_connection_values=true"])
+    (_, Just out, Just err, processHandle) <- createProcess_ "startProlog" (proc "swipl" ["mqi","--write_connection_values=true"])
         { std_out = CreatePipe
         , std_err = CreatePipe
         }
@@ -342,18 +342,18 @@ prologThreadRecvLoop amountExpected amountRecvd bodyBytes t
         prologThreadRecvLoop amountExpected (amountRecvd + C.length bodyData) (bodyBytes <> bodyData) t
 
 
-query :: Text -> PrologThread -> IO QueryResult
+query :: PrologThread -> Text -> IO QueryResult
 query = queryTimeout' Nothing
 
 
-queryTimeout :: Double -> Text -> PrologThread -> IO QueryResult
+queryTimeout :: Double -> PrologThread -> Text -> IO QueryResult
 queryTimeout = queryTimeout' . Just
 
 
-queryTimeout' :: Maybe Double -> Text -> PrologThread -> IO QueryResult
-queryTimeout' mtimeout q t = do
+queryTimeout' :: Maybe Double -> PrologThread -> Text -> IO QueryResult
+queryTimeout' mtimeout t q = do
     let q' = clean q
-    let timeoutString = maybe "_" (T.pack . show) mtimeout :: Text
+    let timeoutString = maybe "_" (T.pack . show) mtimeout
     prologThreadSend ("run((" <> q' <> ")," <> timeoutString <> ")") t
     prologThreadDecodeResult t
 
