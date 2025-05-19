@@ -323,7 +323,7 @@ prologThreadRecvHeaderLoop sizeBytes t = do
     if C.null after then
         prologThreadRecvHeaderLoop sizeBytes' t
     else case C.readInt sizeBytes' of
-        Nothing -> E.throwIO (PrologRecvDecodingException sizeBytes')
+        Nothing -> E.throwIO $ PrologRecvDecodingException sizeBytes'
         Just (size, _) ->
             let
                 bodyBytes = C.drop 1 after
